@@ -127,11 +127,14 @@ void inicializar_server_socket(){
 
 int main( int argc, char *argv[] )
 {
+unsigned int x=5555;
 
    signal(SIGCHLD,SIG_IGN); // termina procesos hijos en estado zombie
    
    open_modbus();
-
+printf("Modbusopenes\n");
+x=read_register();
+printf("REG: %u\n", x);
    inicializar_server_socket();
    escucha_socket(); // llamada al ciclo infinito de escucha
 }
