@@ -79,13 +79,13 @@ void procesar_request (int sock)
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[3],res_buf[4]);
          
          // send commanded
-         res = 400;//res = read_register(COMMANDED_FREQ_ADDR);
+         res = 0xF0F0;//res = read_register(COMMANDED_FREQ_ADDR);
          res_buf[5] = (res >> 8) & 0x00FF;
          res_buf[6] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[5],res_buf[6]);
 
          // send voltage
-         res=3214;//res = read_register(OUTPUT_VOLTAGE_ADDR);
+         res=0xA1A1;//res = read_register(OUTPUT_VOLTAGE_ADDR);
          res_buf[7] = (res >> 8) & 0x00FF;
          res_buf[8] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[7],res_buf[8]);
@@ -94,7 +94,8 @@ void procesar_request (int sock)
          res_buf[9] = (res >> 8) & 0x00FF;
          res_buf[10] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[9],res_buf[10]);
-         n = write(sock,&res_buf,11);
+        res_buf[11] = '\n'; 
+	n = write(sock,&res_buf,12);
       
          break;
 
