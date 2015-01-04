@@ -25,7 +25,7 @@ int sockfd, newsockfd, clilen;
    char buffer[256];
    struct sockaddr_in serv_addr, cli_addr;
    int  n, pid;
-
+int x = 0;
 
 /*
    Rutina de servicio para server TCP
@@ -35,6 +35,7 @@ void procesar_request (int sock)
    int n;
    uint16_t speed;
    int rc;
+	int error;
    uint16_t res;
    char buffer[256];
    char res_buf[30];
@@ -66,31 +67,32 @@ void procesar_request (int sock)
    {
       case GET_STATUS:
          printf("GET_STATUS REQUEST\n");
-         //res = read_register(LOGIC_DATA_ADDR);
-         res = 0x001A; // rotating forward active, accelerating
+         res = read_register(LOGIC_DATA_ADDR);
+         //res = 0x001A; // rotating forward active, accelerating
          res_buf[0] = GET_STATUS;
          res_buf[1] = (res >> 8) & 0x00FF;
          res_buf[2] = res & 0x00FF;
 
          // send feedback
-         res = 300;//es = read_register(FEEDBACK_ADDR);
+         res = read_register(FEEDBACK_ADDR);
          res_buf[3] = (res >> 8) & 0x00FF;
          res_buf[4] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[3],res_buf[4]);
          
          // send commanded
-         res = 0xF0F0;//res = read_register(COMMANDED_FREQ_ADDR);
+//	x++;
+         res = read_register(COMMANDED_FREQ_ADDR);
          res_buf[5] = (res >> 8) & 0x00FF;
          res_buf[6] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[5],res_buf[6]);
 
          // send voltage
-         res=0xA1A1;//res = read_register(OUTPUT_VOLTAGE_ADDR);
+         res = read_register(OUTPUT_VOLTAGE_ADDR);
          res_buf[7] = (res >> 8) & 0x00FF;
          res_buf[8] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[7],res_buf[8]);
          // send current
-         res = 123;//res = read_register(OUTPUT_CURRENT_ADDR);
+         res = read_register(OUTPUT_CURRENT_ADDR);
          res_buf[9] = (res >> 8) & 0x00FF;
          res_buf[10] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[9],res_buf[10]);
@@ -101,18 +103,25 @@ void procesar_request (int sock)
 
       case START_MOTOR:
          printf("START MOTOR\n");
-         //rc = write_register(LOGIC_CMD_ADDR, 0x02);
+         rc = write_register(LOGIC_CMD_ADDR, 0x02);
          break;
 
       case STOP_MOTOR:
          printf("STOP MOTOR\n");
-         //rc = write_register(LOGIC_CMD_ADDR, 0x01);
+	reset_pid();
+         rc = write_register(LOGIC_CMD_ADDR, 0x01);
          break;
 
       case SET_REFERENCE:
          speed = 0;
-         speed = (buffer[1] << 8) | (buffer[2]);
-         printf("SET REFERENCE CMD: %d\n", speed);
+         //speed = (buffer[1] << 8) | (buffer[2]);
+	speed =300;
+	res=read_register(FEEDBACK_ADDR);
+	set_pid_params(1.0,1.0,1.0);
+	printf("RES; %d, speed: %d\n",res,speed);
+	 error = speed - res;
+         printf("SET REFERENCE CMD: %d\n", speed - res);
+	printf("ERROR: %d, PID CORRECTION: %d \n",error, pid_control(speed-res));
          //rc = write_register(SPEED_REFERENCE_ADDR, speed);
          break;
 

@@ -30,7 +30,7 @@ int main( int argc, char *argv[] )
    sem_unlink ("pSem");
    printf ("semaphores initialized.\n\n");
    
-   //open_modbus(SLAVE_ADDRESS, MODBUS_BAUD_RATE);
+   open_modbus(100, 9600);
    inicializar_server_socket();
    escucha_socket(); // llamada al ciclo infinito de escucha
 }
