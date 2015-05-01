@@ -65,7 +65,7 @@ void procesar_request (int sock)
          printf("GET_STATUS REQUEST\n");
          //res = read_register(LOGIC_DATA_ADDR);
          res = 0x000A;
-         n = write(sock,res,16);
+         n = write(sock,&res,16);
          break;
 
       case GET_PARAMS:
