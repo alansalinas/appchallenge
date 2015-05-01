@@ -45,6 +45,8 @@ void procesar_request (int sock)
    char res_buf[3];
    
    bzero(buffer,256);   // limpiar buffer
+
+
    
    n = read(sock,buffer,255); // leer buffer de socket
    
@@ -78,28 +80,31 @@ void procesar_request (int sock)
          res_buf[2] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[1],res_buf[2]);
          n = write(sock,&res_buf,24);
-         /*
+         
          // send commanded
-         res = read_register(COMMANDED_FREQ_ADDR);
+         res = 0x3300;//res = read_register(COMMANDED_FREQ_ADDR);
          res_buf[0] = GET_COMMANDED;
          res_buf[1] = (res >> 8) & 0x00FF;
          res_buf[2] = res & 0x00FF;
-         n = write(sock,&res_buf,24)
+         printf("0: %x, %x, %x\n",res_buf[0],res_buf[1],res_buf[2]);
+         n = write(sock,&res_buf,24);
 
          // send voltage
-         res = read_register(OUTPUT_VOLTAGE_ADDR);
+         res=0x2200;//res = read_register(OUTPUT_VOLTAGE_ADDR);
          res_buf[0] = GET_VOLTAGE;
          res_buf[1] = (res >> 8) & 0x00FF;
          res_buf[2] = res & 0x00FF;
-         n = write(sock,res_buf,24)
+         printf("0: %x, %x, %x\n",res_buf[0],res_buf[1],res_buf[2]);
+         n = write(sock,&res_buf,24);
 
          // send current
-         res = read_register(OUTPUT_CURRENT_ADDR);
+         res = 0x1100;//res = read_register(OUTPUT_CURRENT_ADDR);
          res_buf[0] = GET_CURRENT;
          res_buf[1] = (res >> 8) & 0x00FF;
          res_buf[2] = res & 0x00FF;
-         n = write(sock,res_buf,24)
-      */
+         printf("0: %x, %x, %x\n",res_buf[0],res_buf[1],res_buf[2]);
+         n = write(sock,&res_buf,24);
+      
          break;
 
       case START_MOTOR:
