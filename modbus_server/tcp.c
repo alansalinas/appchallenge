@@ -76,7 +76,7 @@ void procesar_request (int sock)
          res_buf[0] = GET_FEEDBACK;
          res_buf[1] = (res >> 8) & 0x00FF;
          res_buf[2] = res & 0x00FF;
-         printf("0: %x, %x, %x\n",res_buf[0],res_buf[1],res_buf[2])
+         printf("0: %x, %x, %x\n",res_buf[0],res_buf[1],res_buf[2]);
          n = write(sock,&res_buf,24);
          /*
          // send commanded
