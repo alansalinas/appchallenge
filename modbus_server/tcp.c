@@ -70,20 +70,20 @@ void procesar_request (int sock)
 
       case GET_PARAMS:
          printf("GET_PARAMS REQUEST\n");
-         /*
+         
          // send feedback
-         res = read_register(FEEDBACK_ADDR);
+         res = 0x00FF;//es = read_register(FEEDBACK_ADDR);
          res_buf[0] = GET_FEEDBACK;
          res_buf[1] = (res >> 8) & 0x00FF;
          res_buf[2] = res & 0x00FF;
-         n = write(sock,res_buf,24);
-
+         n = write(sock,&res_buf,24);
+         /*
          // send commanded
          res = read_register(COMMANDED_FREQ_ADDR);
          res_buf[0] = GET_COMMANDED;
          res_buf[1] = (res >> 8) & 0x00FF;
          res_buf[2] = res & 0x00FF;
-         n = write(sock,res_buf,24)
+         n = write(sock,&res_buf,24)
 
          // send voltage
          res = read_register(OUTPUT_VOLTAGE_ADDR);
@@ -108,7 +108,7 @@ void procesar_request (int sock)
          break;
 
       case STOP_MOTOR:
-         printf("START MOTOR\n");
+         printf("STOP MOTOR\n");
          //rc = write_register(LOGIC_CMD_ADDR, 0x01);
          break;
 

@@ -23,9 +23,6 @@ void terminar(int sig)
 
 int main( int argc, char *argv[] )
 {
-   uint16_t tmp_read;
-unsigned int x=5555;
-
    signal(SIGCHLD,SIG_IGN); // termina procesos hijos en estado zombie
    signal(SIGINT, terminar);  // registrar señal para capturar interrupcion Ctrl+c
 
@@ -34,8 +31,6 @@ unsigned int x=5555;
    printf ("semaphores initialized.\n\n");
    
    //open_modbus(SLAVE_ADDRESS, MODBUS_BAUD_RATE);
-
-//x=read_register();
    inicializar_server_socket();
    escucha_socket(); // llamada al ciclo infinito de escucha
 }
