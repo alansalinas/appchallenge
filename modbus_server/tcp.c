@@ -4,6 +4,9 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <semaphore.h>
+#include <inttypes.h>
+#include <math.h>
+#include <time.h>
 
 #include "modbus_master.h"
 
@@ -17,6 +20,10 @@
 #define START_MOTOR 0x33
 #define STOP_MOTOR 0x34
 #define SET_REFERENCE 0x35
+#define SET_PID 0x36
+#define TEST 0x37
+
+#define TS 500
 
 /*
    Variables globales para estructura de servidor TCP
@@ -27,6 +34,20 @@ int sockfd, newsockfd, clilen;
    int  n, pid;
 int x = 0;
 
+
+long get_millis ()
+{
+    long            ms; // Milliseconds
+    time_t          s;  // Seconds
+    struct timespec spec;
+
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+    s  = spec.tv_sec;
+    ms = round(spec.tv_nsec / 1.0e6); // Convert nanoseconds to milliseconds
+
+}
+
 /*
    Rutina de servicio para server TCP
 */
@@ -36,12 +57,12 @@ void procesar_request (int sock)
    uint16_t speed;
    int rc;
 	int error;
-   uint16_t res;
+   uint16_t res, feed;
    char buffer[256];
    char res_buf[30];
+   unsigned long t, tao, init_time;
    
    bzero(buffer,256);   // limpiar buffer
-
 
    n = write(sock,buffer,1);
 
@@ -80,7 +101,6 @@ void procesar_request (int sock)
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[3],res_buf[4]);
          
          // send commanded
-//	x++;
          res = read_register(COMMANDED_FREQ_ADDR);
          res_buf[5] = (res >> 8) & 0x00FF;
          res_buf[6] = res & 0x00FF;
@@ -97,9 +117,10 @@ void procesar_request (int sock)
          res_buf[10] = res & 0x00FF;
          printf("0: %x, %x, %x\n",res_buf[0],res_buf[9],res_buf[10]);
         res_buf[11] = '\n'; 
-	n = write(sock,&res_buf,12);
+	     n = write(sock,&res_buf,12);
       
          break;
+
 
       case START_MOTOR:
          printf("START MOTOR\n");
@@ -113,16 +134,89 @@ void procesar_request (int sock)
          break;
 
       case SET_REFERENCE:
+       printf("SET REFERENCE CMD\n");
          speed = 0;
-         //speed = (buffer[1] << 8) | (buffer[2]);
-	speed =300;
-	res=read_register(FEEDBACK_ADDR);
-	set_pid_params(1.0,1.0,1.0);
-	printf("RES; %d, speed: %d\n",res,speed);
-	 error = speed - res;
-         printf("SET REFERENCE CMD: %d\n", speed - res);
-	printf("ERROR: %d, PID CORRECTION: %d \n",error, pid_control(speed-res));
-         //rc = write_register(SPEED_REFERENCE_ADDR, speed);
+         speed = (buffer[1] << 8) | (buffer[2]);
+         reset_pid();
+         rc = write_register(SPEED_REFERENCE_ADDR, speed);
+         break;
+
+      case SET_PID:
+         printf("SET PID REFERENCE CMD\n");
+         speed = (buffer[1] << 8) | (buffer[2]);
+
+         res=read_register(FEEDBACK_ADDR);
+        //set_pid_params(1.0, 1.0, 0.001, 10);
+        printf("RES; %d, setpoint: %d\n",res,speed);
+        error = speed - res;
+        //printf("ERROR: %d, PID CORRECTION: %d \n",error, pid_control(error));
+        rc = write_register(SPEED_REFERENCE_ADDR, pid_control(error));
+
+        res = read_register(LOGIC_DATA_ADDR);
+         //res = 0x001A; // rotating forward active, accelerating
+         res_buf[0] = GET_STATUS;
+         res_buf[1] = (res >> 8) & 0x00FF;
+         res_buf[2] = res & 0x00FF;
+
+         // send feedback
+         res = read_register(FEEDBACK_ADDR);
+         res_buf[3] = (res >> 8) & 0x00FF;
+         res_buf[4] = res & 0x00FF;
+         printf("0: %x, %x, %x\n",res_buf[0],res_buf[3],res_buf[4]);
+         
+         // send commanded
+         res = read_register(COMMANDED_FREQ_ADDR);
+         res_buf[5] = (res >> 8) & 0x00FF;
+         res_buf[6] = res & 0x00FF;
+         printf("0: %x, %x, %x\n",res_buf[0],res_buf[5],res_buf[6]);
+
+         // send voltage
+         res = read_register(OUTPUT_VOLTAGE_ADDR);
+         res_buf[7] = (res >> 8) & 0x00FF;
+         res_buf[8] = res & 0x00FF;
+         printf("0: %x, %x, %x\n",res_buf[0],res_buf[7],res_buf[8]);
+         // send current
+         res = read_register(OUTPUT_CURRENT_ADDR);
+         res_buf[9] = (res >> 8) & 0x00FF;
+         res_buf[10] = res & 0x00FF;
+         printf("0: %x, %x, %x\n",res_buf[0],res_buf[9],res_buf[10]);
+        res_buf[11] = '\n'; 
+        n = write(sock,&res_buf,12);
+
+         break;
+
+      case TEST:
+         rc = write_register(SPEED_REFERENCE_ADDR, 100);
+
+         // esperar referencia
+         do
+         {
+            res = read_register(LOGIC_DATA_ADDR);
+
+         } while((res & 0x0100) == 0);
+
+         tao = 0;
+         t = get_millis();
+         init_time = get_millis();
+         rc = write_register(SPEED_REFERENCE_ADDR, 400);
+
+         do
+         {
+            if(get_millis() - t > TS)
+            {
+              feed = read_register(LOGIC_DATA_ADDR); 
+              if (feed >= 253)   // 400*0.632 = 252.8
+               tao = get_millis();
+
+               t = get_millis();
+            }
+
+            res = read_register(LOGIC_DATA_ADDR);
+
+         } while((res & 0x0100) == 0);
+
+         printf("TAO = %lu milliseconds\n", tao - init_time);
+
          break;
 
       default:

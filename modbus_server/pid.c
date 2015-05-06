@@ -1,12 +1,18 @@
 #include <stdio.h>
+
+#define KP 1.0
+#define TI 500.0
+#define TD 1.0
+
 // Variables de memoria para el control PID
 double integral, integral_1;
 double derivativo, derivativo_1;
 
 // Parametros pid para granancia proporcional, termino integral y termino derivativo
-double Kp = 1;
+double Kp = 0.8;
 double Ti = 1;
 double Td = 1;
+
 
 unsigned int TS;	// Tiempo de muestreo
 
@@ -22,13 +28,14 @@ void reset_pid()
   derivativo_1 = 0;
 }
 
-void set_pid_params(double kp, double ti, double td)
+void set_pid_params(double kp, double ti, double td, int ts)
 {
 	Kp = kp;
 	Ti = ti;
 	Td = td;
+    TS = ts;
 
-printf("Kp: %f, Ti: %f, Td %f\n",Kp, Ti, Td);
+  printf("SET PARAMS Kp: %f, Ti: %f, Td %f, TS: %d\n",Kp, Ti, Td, TS);
 }
 
 void stop_motor()
@@ -43,7 +50,8 @@ void manipulacion(int m)
 
  int pid_control(int error)
 {
-	printf("PID ERROR %d\n",error);
+  int correction;
+	printf("PID ERROR recieved: %d\n",error);
 
   if (integral < 0)	// acotamiento
     integral = 0;
@@ -53,7 +61,7 @@ void manipulacion(int m)
   if (integral_1 < 0)	// acotamiento
     integral_1 = 0;
 
-  integral=(int)(Kp*(TS/Ti)*error + integral_1);
+  integral=(int)(KP*(TS/TI)*error + integral_1);
 
   if (derivativo < 0)	// acotamiento
     derivativo = 0;
@@ -62,8 +70,21 @@ void manipulacion(int m)
 
   if (derivativo_1 < 0)	// acotamiento
     derivativo_1 = 0;
-	printf("K: %f, %d\n", Kp, (int)(Kp*error));
-  derivativo =  (int)(Kp*(Td/TS)*error - derivativo_1);
-	printf("PID CORR: %d\n", (int)(Kp*error + integral + derivativo));
-  return (int)(Kp*error + integral + derivativo);
+
+  derivativo =  (int)(KP*(TD/TS)*error - derivativo_1);
+
+    printf("Termino proporcional: %f, %d\n", KP, (int)(KP*error));
+    printf("Termino integral: %f, %d\n", TI, (int)integral);
+    printf("Termino derivativo: %f, %d\n", TD, (int)derivativo);
+
+	printf("PID CORRECTION: %d\n", (int)(KP*error + integral + derivativo));
+    correction =(int)(KP*error + integral + derivativo);
+
+    if(correction > 600)
+      correction = 600;
+
+    if(correction < 0)
+      correction = 0;
+
+    return correction;
 }

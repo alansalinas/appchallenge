@@ -2,7 +2,7 @@
 FLAGS = -I /usr/include/modbus
 
 LDIR = /usr/lib
-LIBS = -lmodbus -pthread
+LIBS = -lmodbus -pthread -lm
 
 
 all: main.c modbus_master.c
